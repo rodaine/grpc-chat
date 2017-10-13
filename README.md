@@ -42,7 +42,7 @@ grpc-chat -h "chat.example.com:6262" -p "super-secret" -n "Rodaine"
 
 ## Docker
 
-A Dockerfile is included with this project and the image is hosted on the Docker Hub.
+A Dockerfile is included with this project and the image is [hosted on the Docker Hub](https://hub.docker.com/r/rodaine/grpc-chat).
 
 ### Run as Server
 
@@ -59,7 +59,8 @@ docker run --rm \
 docker run --rm \
   rodaine/grpc-chat \
   -h "chat.example.com" \
-  -p "super-secret"
+  -p "super-secret" \
+  -n "Rodaine"
 ```
 
 ### Build from Scratch
