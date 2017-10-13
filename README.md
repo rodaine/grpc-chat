@@ -1,4 +1,4 @@
-# grpc-chat
+# grpc-chat [![](https://img.shields.io/docker/automated/rodaine/teamspeak3-alpine.svg)](https://hub.docker.com/r/rodaine/grpc-chat/)
 
 A simple chat server/client implemented with [gRPC](https://grpc.io) in Go. Built with :heart: for the [Orange County Gopher's Meetup](https://www.meetup.com/Orange-County-Gophers/).
 
