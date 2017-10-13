@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package chat;
+
+import "google/protobuf/timestamp.proto";
+
+service Chat {
+    rpc Login(LoginRequest) returns (LoginResponse) {}
+    rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+    rpc Stream(stream StreamRequest) returns (stream StreamResponse) {}
+}
+
+message LoginRequest {
+    string password = 1;
+    string name     = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+}
+
+message LogoutRequest {
+    string token = 1;
+}
+
+message LogoutResponse {}
+
+message StreamRequest {
+    string message = 2;
+}
+
+message StreamResponse {
+    google.protobuf.Timestamp timestamp = 1;
+
+    oneof event {
+        Login    client_login    = 2;
+        Logout   client_logout   = 3;
+        Message  client_message  = 4;
+        Shutdown server_shutdown = 5;
+    }
+
+    message Login {
+        string name = 1;
+    }
+
+    message Logout {
+        string name = 1;
+    }
+
+    message Message {
+        string name    = 1;
+        string message = 2;
+    }
+
+    message Shutdown {}
+}
