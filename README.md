@@ -56,7 +56,7 @@ docker run --rm \
 ### Run as Client
 
 ```bash
-docker run --rm \
+docker run --rm -i \
   rodaine/grpc-chat \
   -h "chat.example.com" \
   -p "super-secret" \
