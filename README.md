@@ -6,11 +6,10 @@ A simple chat server/client implemented with [gRPC](https://grpc.io) in Go. Buil
 
 ## Installation
 
-Installation requires the Go toolchain, the [`protoc` compiler](https://github.com/google/protobuf) and the [`protoc-gen-go` plugin](https://github.com/golang/protobuf).
+Installation requires the Go toolchain.
 
 ```bash
-go get github.com/rodaine/grpc-chat
-make install
+go install github.com/rodaine/grpc-chat
 ```
 
 ## Usage
@@ -61,10 +60,4 @@ docker run --rm -i \
   -h "chat.example.com" \
   -p "super-secret" \
   -n "Rodaine"
-```
-
-### Build from Scratch
-
-```bash
-make docker
 ```

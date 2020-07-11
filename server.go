@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
-	"github.com/rodaine/grpc-chat/protos"
+	chat "github.com/rodaine/grpc-chat/protos"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,10 +23,10 @@ const tokenHeader = "x-chat-token"
 type server struct {
 	Host, Password string
 
-	Broadcast chan chat.StreamResponse
+	Broadcast chan *chat.StreamResponse
 
 	ClientNames   map[string]string
-	ClientStreams map[string]chan chat.StreamResponse
+	ClientStreams map[string]chan *chat.StreamResponse
 
 	namesMtx, streamsMtx sync.RWMutex
 }
@@ -36,10 +36,10 @@ func Server(host, pass string) *server {
 		Host:     host,
 		Password: pass,
 
-		Broadcast: make(chan chat.StreamResponse, 1000),
+		Broadcast: make(chan *chat.StreamResponse, 1000),
 
 		ClientNames:   make(map[string]string),
-		ClientStreams: make(map[string]chan chat.StreamResponse),
+		ClientStreams: make(map[string]chan *chat.StreamResponse),
 	}
 }
 
@@ -63,16 +63,16 @@ func (s *server) Run(ctx context.Context) error {
 	go s.broadcast(ctx)
 
 	go func() {
-		srv.Serve(l)
+		_ = srv.Serve(l)
 		cancel()
 	}()
 
 	<-ctx.Done()
 
-	s.Broadcast <- chat.StreamResponse{
+	s.Broadcast <- &chat.StreamResponse{
 		Timestamp: ptypes.TimestampNow(),
 		Event: &chat.StreamResponse_ServerShutdown{
-			&chat.StreamResponse_Shutdown{}}}
+			ServerShutdown: &chat.StreamResponse_Shutdown{}}}
 
 	close(s.Broadcast)
 	ServerLogf(time.Now(), "shutting down")
@@ -81,7 +81,7 @@ func (s *server) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) Login(ctx context.Context, req *chat.LoginRequest) (*chat.LoginResponse, error) {
+func (s *server) Login(_ context.Context, req *chat.LoginRequest) (*chat.LoginResponse, error) {
 	switch {
 	case req.Password != s.Password:
 		return nil, status.Error(codes.Unauthenticated, "password is incorrect")
@@ -94,9 +94,9 @@ func (s *server) Login(ctx context.Context, req *chat.LoginRequest) (*chat.Login
 
 	ServerLogf(time.Now(), "%s (%s) has logged in", tkn, req.Name)
 
-	s.Broadcast <- chat.StreamResponse{
+	s.Broadcast <- &chat.StreamResponse{
 		Timestamp: ptypes.TimestampNow(),
-		Event: &chat.StreamResponse_ClientLogin{&chat.StreamResponse_Login{
+		Event: &chat.StreamResponse_ClientLogin{ClientLogin: &chat.StreamResponse_Login{
 			Name: req.Name,
 		}},
 	}
@@ -104,7 +104,7 @@ func (s *server) Login(ctx context.Context, req *chat.LoginRequest) (*chat.Login
 	return &chat.LoginResponse{Token: tkn}, nil
 }
 
-func (s *server) Logout(ctx context.Context, req *chat.LogoutRequest) (*chat.LogoutResponse, error) {
+func (s *server) Logout(_ context.Context, req *chat.LogoutRequest) (*chat.LogoutResponse, error) {
 	name, ok := s.delName(req.Token)
 	if !ok {
 		return nil, status.Error(codes.NotFound, "token not found")
@@ -112,9 +112,9 @@ func (s *server) Logout(ctx context.Context, req *chat.LogoutRequest) (*chat.Log
 
 	ServerLogf(time.Now(), "%s (%s) has logged out", req.Token, name)
 
-	s.Broadcast <- chat.StreamResponse{
+	s.Broadcast <- &chat.StreamResponse{
 		Timestamp: ptypes.TimestampNow(),
-		Event: &chat.StreamResponse_ClientLogout{&chat.StreamResponse_Logout{
+		Event: &chat.StreamResponse_ClientLogout{ClientLogout: &chat.StreamResponse_Logout{
 			Name: name,
 		}},
 	}
@@ -143,9 +143,9 @@ func (s *server) Stream(srv chat.Chat_StreamServer) error {
 			return err
 		}
 
-		s.Broadcast <- chat.StreamResponse{
+		s.Broadcast <- &chat.StreamResponse{
 			Timestamp: ptypes.TimestampNow(),
-			Event: &chat.StreamResponse_ClientMessage{&chat.StreamResponse_Message{
+			Event: &chat.StreamResponse_ClientMessage{ClientMessage: &chat.StreamResponse_Message{
 				Name:    name,
 				Message: req.Message,
 			}},
@@ -165,7 +165,7 @@ func (s *server) sendBroadcasts(srv chat.Chat_StreamServer, tkn string) {
 		case <-srv.Context().Done():
 			return
 		case res := <-stream:
-			if s, ok := status.FromError(srv.Send(&res)); ok {
+			if s, ok := status.FromError(srv.Send(res)); ok {
 				switch s.Code() {
 				case codes.OK:
 					// noop
@@ -181,7 +181,7 @@ func (s *server) sendBroadcasts(srv chat.Chat_StreamServer, tkn string) {
 	}
 }
 
-func (s *server) broadcast(ctx context.Context) {
+func (s *server) broadcast(_ context.Context) {
 	for res := range s.Broadcast {
 		s.streamsMtx.RLock()
 		for _, stream := range s.ClientStreams {
@@ -196,8 +196,8 @@ func (s *server) broadcast(ctx context.Context) {
 	}
 }
 
-func (s *server) openStream(tkn string) (stream chan chat.StreamResponse) {
-	stream = make(chan chat.StreamResponse, 100)
+func (s *server) openStream(tkn string) (stream chan *chat.StreamResponse) {
+	stream = make(chan *chat.StreamResponse, 100)
 
 	s.streamsMtx.Lock()
 	s.ClientStreams[tkn] = stream
