@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -101,7 +102,17 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 		case *chat.StreamResponse_ServerShutdown:
 			ServerLogf(ts, "the server is shutting down")
 			c.Shutdown = true
-			syscall.Kill(os.Getpid(), syscall.SIGTERM)
+
+			p, err := os.FindProcess(os.Getpid())
+			if err != nil {
+				panic(err)
+			}
+
+			if runtime.GOOS == "windows" {
+				_ = p.Signal(os.Kill)
+			}
+
+			_ = p.Signal(syscall.SIGTERM)
 		default:
 			ClientLogf(ts, "unexpected event from the server: %T", evt)
 			return nil
