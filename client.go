@@ -105,7 +105,7 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 
 			p, err := os.FindProcess(os.Getpid())
 			if err != nil {
-				panic(err)
+				ClientLogf(ts, "not able to find server process to shutdown: %v", err)
 			}
 
 			if runtime.GOOS == "windows" {
