@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
-	"runtime"
+
 	"syscall"
 	"time"
 
@@ -105,14 +105,13 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 
 			p, err := os.FindProcess(os.Getpid())
 			if err != nil {
-				ClientLogf(ts, "not able to find server process to shutdown: %v", err)
+				ClientLogf(ts, "not able to find client process to shutdown: %v", err)
 			}
 
-			if runtime.GOOS == "windows" {
-				_ = p.Signal(os.Kill)
+			err = p.Signal(syscall.SIGKILL)
+			if err != nil {
+				ClientLogf(ts, "not able to shutdown client: %v", err)
 			}
-
-			_ = p.Signal(syscall.SIGTERM)
 		default:
 			ClientLogf(ts, "unexpected event from the server: %T", evt)
 			return nil
