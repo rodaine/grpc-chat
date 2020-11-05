@@ -108,9 +108,10 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 				ClientLogf(ts, "not able to find client process to shutdown: %v", err)
 			}
 
-			err = p.Signal(syscall.SIGKILL)
+			err = p.Signal(syscall.SIGTERM)
 			if err != nil {
-				ClientLogf(ts, "not able to shutdown client: %v", err)
+				ClientLogf(ts, "not able to shutdown client, forcing kill: %v", err)
+				p.Kill()
 			}
 		default:
 			ClientLogf(ts, "unexpected event from the server: %T", evt)
