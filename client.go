@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 
-	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -102,17 +101,7 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 		case *chat.StreamResponse_ServerShutdown:
 			ServerLogf(ts, "the server is shutting down")
 			c.Shutdown = true
-
-			p, err := os.FindProcess(os.Getpid())
-			if err != nil {
-				ClientLogf(ts, "not able to find client process to shutdown: %v", err)
-			}
-
-			err = p.Signal(syscall.SIGTERM)
-			if err != nil {
-				ClientLogf(ts, "not able to shutdown client, forcing kill: %v", err)
-				p.Kill()
-			}
+			return nil
 		default:
 			ClientLogf(ts, "unexpected event from the server: %T", evt)
 			return nil
