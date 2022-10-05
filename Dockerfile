@@ -1,20 +1,20 @@
-FROM golang:1.14-alpine as builder
-RUN apk --no-cache add git
+FROM golang:1.19-alpine as builder
 
-WORKDIR /go/src/github.com/rodaine/grpc-chat
-COPY go.* ./
-
-RUN go mod download
+WORKDIR /tmp/grpc-chat
 
 COPY . .
-RUN go build -o app .
+
+ENV CGO_ENABLED=0
+
+RUN go build -ldflags="-d -s -w" -tags timetzdata -trimpath -o app .
 
 # --- Execution Stage
 
-FROM alpine:latest
+FROM scratch
+
+COPY --from=builder /tmp/grpc-chat/app /app
+COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
 EXPOSE 6262/tcp
 
-WORKDIR /root/
-COPY --from=builder /go/src/github.com/rodaine/grpc-chat/app .
-
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["/app"]

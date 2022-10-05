@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	chat "github.com/rodaine/grpc-chat/protos"
 	"golang.org/x/net/context"
@@ -16,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const tokenHeader = "x-chat-token"
@@ -29,6 +29,7 @@ type server struct {
 	ClientStreams map[string]chan *chat.StreamResponse
 
 	namesMtx, streamsMtx sync.RWMutex
+	chat.UnimplementedChatServer
 }
 
 func Server(host, pass string) *server {
@@ -70,7 +71,7 @@ func (s *server) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	s.Broadcast <- &chat.StreamResponse{
-		Timestamp: ptypes.TimestampNow(),
+		Timestamp: timestamppb.Now(),
 		Event: &chat.StreamResponse_ServerShutdown{
 			ServerShutdown: &chat.StreamResponse_Shutdown{}}}
 
@@ -95,7 +96,7 @@ func (s *server) Login(_ context.Context, req *chat.LoginRequest) (*chat.LoginRe
 	ServerLogf(time.Now(), "%s (%s) has logged in", tkn, req.Name)
 
 	s.Broadcast <- &chat.StreamResponse{
-		Timestamp: ptypes.TimestampNow(),
+		Timestamp: timestamppb.Now(),
 		Event: &chat.StreamResponse_ClientLogin{ClientLogin: &chat.StreamResponse_Login{
 			Name: req.Name,
 		}},
@@ -113,7 +114,7 @@ func (s *server) Logout(_ context.Context, req *chat.LogoutRequest) (*chat.Logou
 	ServerLogf(time.Now(), "%s (%s) has logged out", req.Token, name)
 
 	s.Broadcast <- &chat.StreamResponse{
-		Timestamp: ptypes.TimestampNow(),
+		Timestamp: timestamppb.Now(),
 		Event: &chat.StreamResponse_ClientLogout{ClientLogout: &chat.StreamResponse_Logout{
 			Name: name,
 		}},
@@ -144,7 +145,7 @@ func (s *server) Stream(srv chat.Chat_StreamServer) error {
 		}
 
 		s.Broadcast <- &chat.StreamResponse{
-			Timestamp: ptypes.TimestampNow(),
+			Timestamp: timestamppb.Now(),
 			Event: &chat.StreamResponse_ClientMessage{ClientMessage: &chat.StreamResponse_Message{
 				Name:    name,
 				Message: req.Message,
