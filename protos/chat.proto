@@ -4,7 +4,7 @@ package chat;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package="./protos";
+option go_package="github.com/rodaine/grpc-chat/protos";
 
 service Chat {
     rpc Login(LoginRequest) returns (LoginResponse) {}
