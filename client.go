@@ -89,7 +89,7 @@ func (c *client) receive(sc chat.Chat_StreamClient) error {
 			return err
 		}
 
-		ts := tsToTime(res.Timestamp)
+		ts := res.Timestamp.AsTime().In(time.Local)
 
 		switch evt := res.Event.(type) {
 		case *chat.StreamResponse_ClientLogin:
