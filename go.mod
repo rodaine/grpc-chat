@@ -6,7 +6,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	golang.org/x/net v0.17.0
 	google.golang.org/grpc v1.56.3
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
